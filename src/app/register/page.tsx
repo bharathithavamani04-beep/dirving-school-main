@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getAuthInstance } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/Button";
@@ -58,6 +58,7 @@ export default function RegisterPage() {
       console.log("[Register] Creating Firebase user...");
       
       // Step 1: Create Firebase user
+      const auth = getAuthInstance();
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,

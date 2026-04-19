@@ -5,7 +5,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getAuthInstance } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +24,7 @@ export function AuthForm() {
     setLoading(true);
 
     try {
+      const auth = getAuthInstance();
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {

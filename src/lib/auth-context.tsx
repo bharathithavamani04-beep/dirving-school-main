@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { auth } from "./firebase";
+import { getAuthInstance } from "./firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -17,27 +17,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Only set up auth listener if auth is available (client-side)
-    if (!auth) {
+    // Only set up auth listener if we're on client side
+    if (typeof window === 'undefined') {
       setLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log("[Auth] User state changed:", currentUser?.email || "logged out");
-      setUser(currentUser);
-      setLoading(false);
-    });
+    try {
+      const auth = getAuthInstance();
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        console.log("[Auth] User state changed:", currentUser?.email || "logged out");
+        setUser(currentUser);
+        setLoading(false);
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("[Auth] Failed to initialize auth:", error);
+      setLoading(false);
+    }
   }, []);
 
   const logout = async () => {
-    if (!auth) {
-      throw new Error("Firebase auth not available");
-    }
-
     try {
+      const auth = getAuthInstance();
       console.log("[Auth] Logging out...");
       await signOut(auth);
       setUser(null);
