@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+enum CourseType {
+  BASIC
+  ADVANCED
+  DEFENSE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HOLIDAY
+}
+
+// User model for Firebase authentication
+model User {
+  id            String   @id @default(cuid())
+  firebaseId    String   @unique
+  email         String   @unique
+  name          String
+  phone         String?
+  role          UserRole @default(STUDENT)
+  courseId      String?
+  course        Course?  @relation(fields: [courseId], references: [id])
+  attendance    Attendance[]
+  payments      Payment[]
+  feedback      Feedback[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([role])
+}
+
+model Course {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String
+  type        CourseType @default(BASIC)
+  totalDays   Int        @default(30) // BASIC=30, ADVANCED=50, DEFENSE=90
+  duration    Int        // in days (kept for backward compatibility)
+  price       Float
+  students    User[]
+  attendance  Attendance[]
+  payments    Payment[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Attendance {
+  id        String             @id @default(cuid())
+  studentId String
+  student   User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId  String?
+  course    Course?            @relation(fields: [courseId], references: [id])
+  date      DateTime
+  status    AttendanceStatus   @default(ABSENT)
+  isHoliday Boolean            @default(false)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([date])
+}
+
+
+model Payment {
+  id        String   @id @default(cuid())
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId  String?
+  course    Course?  @relation(fields: [courseId], references: [id])
+  amount    Float
+  paymentMethod String @default("CASH")
+  notes     String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  rating    Int      // 1-5
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+}
