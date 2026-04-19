@@ -17,6 +17,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only set up auth listener if auth is available (client-side)
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log("[Auth] User state changed:", currentUser?.email || "logged out");
       setUser(currentUser);
@@ -27,6 +33,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = async () => {
+    if (!auth) {
+      throw new Error("Firebase auth not available");
+    }
+
     try {
       console.log("[Auth] Logging out...");
       await signOut(auth);
